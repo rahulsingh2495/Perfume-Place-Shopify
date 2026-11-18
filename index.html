@@ -93,14 +93,24 @@
       max-width: 100vw !important;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
     }
-    /* Hide Netlify floating badge / notifications / drawer */
+    /* Hide Netlify floating badge / notifications / drawer / iframes */
+    #nl-badge-frame,
+    iframe#nl-badge-frame,
+    iframe[title*="Netlify" i],
+    iframe[title*="Powered by Netlify" i],
+    iframe[srcdoc*="Netlify" i],
+    iframe[srcdoc*="Powered by Netlify" i],
+    [id*="nl-badge" i],
+    [class*="nl-badge" i],
     #netlify-badge,
     [data-netlify-deploy-id],
     .netlify-badge,
-    [class*="netlify"],
-    [id*="netlify"],
+    [class*="netlify" i],
+    [id*="netlify" i],
     netlify-drawer,
     #netlify-drawer,
+    div:has(> iframe#nl-badge-frame),
+    div:has(> iframe[title*="Netlify" i]),
     div:has(> a[href*="netlify.com"]),
     a[href*="netlify.com"] {
       display: none !important;
@@ -109,8 +119,81 @@
       pointer-events: none !important;
       width: 0 !important;
       height: 0 !important;
+      max-width: 0 !important;
+      max-height: 0 !important;
+      position: absolute !important;
+      top: -99999px !important;
+      left: -99999px !important;
+      z-index: -999999 !important;
     }
   </style>
+
+  <!-- Immediate Early Script to purge Netlify badge iframe as soon as edge injects it -->
+  <script>
+    (function() {
+      function purgeNetlify() {
+        const selectors = [
+          '#nl-badge-frame',
+          'iframe#nl-badge-frame',
+          'iframe[title*="Netlify" i]',
+          'iframe[title*="Powered by Netlify" i]',
+          'iframe[srcdoc*="Netlify" i]',
+          '[id*="nl-badge" i]',
+          '[class*="nl-badge" i]',
+          '#netlify-badge',
+          '[data-netlify-deploy-id]',
+          '.netlify-badge',
+          '[class*="netlify" i]',
+          '[id*="netlify" i]',
+          'netlify-drawer',
+          '#netlify-drawer',
+          'a[href*="netlify.com"]'
+        ];
+        try {
+          document.querySelectorAll(selectors.join(', ')).forEach(el => {
+            if (el.parentElement && el.parentElement !== document.body && el.parentElement !== document.documentElement && el.parentElement.children.length === 1) {
+              el.parentElement.style.display = 'none';
+              el.parentElement.remove();
+            } else {
+              el.style.display = 'none';
+              el.remove();
+            }
+          });
+          document.querySelectorAll('iframe').forEach(iframe => {
+            const title = (iframe.getAttribute('title') || '').toLowerCase();
+            const id = (iframe.getAttribute('id') || '').toLowerCase();
+            const srcdoc = (iframe.getAttribute('srcdoc') || '').toLowerCase();
+            const src = (iframe.getAttribute('src') || '').toLowerCase();
+            if (id.includes('nl-badge') || title.includes('netlify') || srcdoc.includes('netlify') || src.includes('netlify')) {
+              if (iframe.parentElement && iframe.parentElement !== document.body && iframe.parentElement.children.length === 1) {
+                iframe.parentElement.style.display = 'none';
+                iframe.parentElement.remove();
+              } else {
+                iframe.style.display = 'none';
+                iframe.remove();
+              }
+            }
+          });
+        } catch(e) {}
+      }
+
+      purgeNetlify();
+      if (typeof MutationObserver !== 'undefined') {
+        const obs = new MutationObserver(purgeNetlify);
+        if (document.documentElement) {
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        } else {
+          document.addEventListener('DOMContentLoaded', () => {
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+          });
+        }
+      }
+      window.addEventListener('DOMContentLoaded', purgeNetlify);
+      window.addEventListener('load', purgeNetlify);
+      const timer = setInterval(purgeNetlify, 100);
+      setTimeout(() => clearInterval(timer), 8000);
+    })();
+  </script>
 </head>
 
 <body class="font-sans text-brand-charcoalDark bg-[#FAFBF9] antialiased selection:bg-brand-gold selection:text-white pb-16 lg:pb-0">
@@ -4115,21 +4198,57 @@
       alert(`Opening High-Definition Video Review for ${reelId} from our Verified Fragrance Creators!`);
     }
 
-    // Auto-remove Netlify badge / drawer / notifications
+    // Auto-remove Netlify badge / drawer / notifications / iframes
     function purgeNetlifyBadge() {
-      document.querySelectorAll('#netlify-badge, [data-netlify-deploy-id], .netlify-badge, [class*="netlify"], [id*="netlify"], netlify-drawer, #netlify-drawer, a[href*="netlify.com"]').forEach(el => {
-        el.style.display = 'none';
-        el.style.visibility = 'hidden';
-        el.style.opacity = '0';
-        el.remove();
-      });
-      // purge any element containing "Powered by Netlify"
-      document.querySelectorAll('div, a, span, button').forEach(el => {
-        if (el.textContent && el.textContent.includes('Powered by Netlify') && el.children.length <= 3) {
-          el.style.display = 'none';
-          el.remove();
-        }
-      });
+      const selectors = [
+        '#nl-badge-frame',
+        'iframe#nl-badge-frame',
+        'iframe[title*="Netlify" i]',
+        'iframe[title*="Powered by Netlify" i]',
+        'iframe[srcdoc*="Netlify" i]',
+        '[id*="nl-badge" i]',
+        '[class*="nl-badge" i]',
+        '#netlify-badge',
+        '[data-netlify-deploy-id]',
+        '.netlify-badge',
+        '[class*="netlify" i]',
+        '[id*="netlify" i]',
+        'netlify-drawer',
+        '#netlify-drawer',
+        'a[href*="netlify.com"]'
+      ];
+      try {
+        document.querySelectorAll(selectors.join(', ')).forEach(el => {
+          if (el.parentElement && el.parentElement !== document.body && el.parentElement !== document.documentElement && el.parentElement.children.length === 1) {
+            el.parentElement.style.display = 'none';
+            el.parentElement.remove();
+          } else {
+            el.style.display = 'none';
+            el.remove();
+          }
+        });
+        document.querySelectorAll('iframe').forEach(iframe => {
+          const title = (iframe.getAttribute('title') || '').toLowerCase();
+          const id = (iframe.getAttribute('id') || '').toLowerCase();
+          const srcdoc = (iframe.getAttribute('srcdoc') || '').toLowerCase();
+          const src = (iframe.getAttribute('src') || '').toLowerCase();
+          if (id.includes('nl-badge') || title.includes('netlify') || srcdoc.includes('netlify') || src.includes('netlify')) {
+            if (iframe.parentElement && iframe.parentElement !== document.body && iframe.parentElement.children.length === 1) {
+              iframe.parentElement.style.display = 'none';
+              iframe.parentElement.remove();
+            } else {
+              iframe.style.display = 'none';
+              iframe.remove();
+            }
+          }
+        });
+        document.querySelectorAll('div, a, span, button').forEach(el => {
+          if (el.textContent && el.textContent.includes('Powered by Netlify') && el.children.length <= 3) {
+            el.style.display = 'none';
+            el.remove();
+          }
+        });
+      } catch(e) {}
     }
     document.addEventListener('DOMContentLoaded', purgeNetlifyBadge);
     window.addEventListener('load', () => {
